@@ -1,115 +1,131 @@
 """
 fundos_config.py — Mercury Wealth Management
-=============================================
-Fonte: Cópia_de_Matriz_atual_v2.xlsx, aba "MATRIZ"
-Coluna utilizada: "Tática" (coluna Base na planilha) — posição atual da Mercury.
+============================================
+Fonte da lista: aba "Lista de Fundos Aprovados" (01/07/2026)
+Fonte dos dados: API Quantum Axis → quantum.xlsx (atualização mensal/trimestral)
 
-Estrutura de classes conforme a matriz:
+NOME_QUANTUM: nome exato como aparece no Excel da Quantum (chave de join)
+CLASSE_GRANULAR: classe conforme a lista aprovada da Mercury
+MACRO_CLASSE: mapeamento → 4 classes da matriz de alocação
   CDI | Renda Fixa | Multimercados | Ações
 """
 
-# ─── TÁTICA: alocação central por perfil (coluna "Tática" da matriz) ─────────
+# ─── FUNDOS APROVADOS ────────────────────────────────────────────────────────
+# Mapeamento macro_classe é proposta — confirmar com o comitê Mercury.
+
+FUNDOS = [
+    {
+        "nome_quantum":  "BTG PACTUAL DIGITAL TESOURO SELIC FIF RENDA FIXA SIMPLES",
+        "cnpj":          "29.562.673/0001-17",
+        "classe_granular": "Caixa",
+        "macro_classe":  "CDI",
+    },
+    {
+        "nome_quantum":  "CAPITÂNIA REIT MASTER RESP LIMITADA FIF CIC MULTIMERCADO",
+        "cnpj":          "18.447.898/0001-06",
+        "classe_granular": "Imobiliários",
+        "macro_classe":  "Multimercados",   # ← confirmar: Multimercados ou classe própria?
+    },
+    {
+        "nome_quantum":  "GAMA PEARL DIVER GLOBAL FLOATING INCOME BRL INVESTIMENTO NO EXTERIOR RESP LIMITADA FIF CIC",
+        "cnpj":          "51.835.937/0001-18",
+        "classe_granular": "Offshore BRL",
+        "macro_classe":  "Multimercados",   # ← confirmar
+    },
+    {
+        "nome_quantum":  "GAMA SCHRODER GAIA CONTOUR TECH EQUITY LONG & SHORT BRL INVESTIMENTO NO EXTERIOR RESP LIMITADA FIF CIC MULTIMERCADO",
+        "cnpj":          "35.744.790/0001-02",
+        "classe_granular": "Offshore BRL",
+        "macro_classe":  "Multimercados",   # ← confirmar
+    },
+    {
+        "nome_quantum":  "ITAÚ DEBÊNTURES INCENTIVADAS CDI DIST RESP LIMITADA FIF CIC FI INFRA RENDA FIXA CRÉDITO PRIVADO",
+        "cnpj":          "45.512.145/0001-00",
+        "classe_granular": "Crédito Corporativo",
+        "macro_classe":  "Renda Fixa",
+    },
+    {
+        "nome_quantum":  "M MACRO FIF CIC MULTIMERCADO",
+        "cnpj":          "14.796.095/0001-06",
+        "classe_granular": "Multimercados",
+        "macro_classe":  "Multimercados",
+    },
+    {
+        "nome_quantum":  "MCA II RESP LIMITADA FICFIDC 1",
+        "cnpj":          "23.711.364/0001-85",
+        "classe_granular": "Crédito Estruturado",
+        "macro_classe":  "Renda Fixa",
+    },
+    {
+        "nome_quantum":  "MHX FICFIDC 1",
+        "cnpj":          "37.970.369/0001-37",
+        "classe_granular": "Crédito Estruturado",
+        "macro_classe":  "Renda Fixa",
+    },
+    {
+        "nome_quantum":  "MORE CRÉDITO RESP LIMITADA FICFIDC 1",
+        "cnpj":          "15.585.932/0001-10",
+        "classe_granular": "Crédito Estruturado",
+        "macro_classe":  "Renda Fixa",
+    },
+    {
+        "nome_quantum":  "NEST IBOVESPA ENHANCED RESP LIMITADA FIF AÇÕES",
+        "cnpj":          "41.215.368/0001-54",
+        "classe_granular": "Renda Variável",
+        "macro_classe":  "Ações",
+    },
+    {
+        "nome_quantum":  "SPARTA DEBÊNTURES INCENTIVADAS INFLAÇÃO RESP LIMITADA FIF CIC FI INFRA RENDA FIXA",
+        "cnpj":          "39.959.025/0001-52",
+        "classe_granular": "Renda Fixa Inflação",
+        "macro_classe":  "Renda Fixa",
+    },
+    {
+        "nome_quantum":  "M BRZ RESP LIMITADA FICFIDC 1",
+        "cnpj":          "57.391.121/0001-29",
+        "classe_granular": "Crédito Estruturado",
+        "macro_classe":  "Renda Fixa",
+    },
+    {
+        "nome_quantum":  "M8 CREDIT OPPORTUNITIES FICFIDC 1",
+        "cnpj":          "26.841.302/0001-86",
+        "classe_granular": "Crédito Estruturado",
+        "macro_classe":  "Renda Fixa",
+    },
+]
+
+# ─── Helpers ──────────────────────────────────────────────────────────────────
+def fundos_por_macro(macro_classe: str) -> list[dict]:
+    return [f for f in FUNDOS if f["macro_classe"] == macro_classe]
+
+def fundo_por_nome_quantum(nome: str) -> dict | None:
+    return next((f for f in FUNDOS if f["nome_quantum"] == nome), None)
+
+CLASSES_MACRO   = ["CDI", "Renda Fixa", "Multimercados", "Ações"]
+CLASSES_GRANULARES = sorted(set(f["classe_granular"] for f in FUNDOS))
+
+
+# ─── PERFIS (coluna Tática da Matriz) ────────────────────────────────────────
 PERFIS_TATICA = {
-    "Conservador": {
-        "CDI":          0.30,
-        "Renda Fixa":   0.50,
-        "Multimercados":0.20,
-        "Ações":        0.00,
-    },
-    "Moderado": {
-        "CDI":          0.15,
-        "Renda Fixa":   0.55,
-        "Multimercados":0.25,
-        "Ações":        0.05,
-    },
-    "Balanceado": {
-        "CDI":          0.05,
-        "Renda Fixa":   0.55,
-        "Multimercados":0.30,
-        "Ações":        0.10,
-    },
-    "Crescimento": {
-        "CDI":          0.00,
-        "Renda Fixa":   0.50,
-        "Multimercados":0.35,
-        "Ações":        0.15,
-    },
-    "Sofisticado": {
-        "CDI":          0.00,
-        "Renda Fixa":   0.35,
-        "Multimercados":0.40,
-        "Ações":        0.25,
-    },
+    "Conservador": {"CDI": 0.30, "Renda Fixa": 0.50, "Multimercados": 0.20, "Ações": 0.00},
+    "Moderado":    {"CDI": 0.15, "Renda Fixa": 0.55, "Multimercados": 0.25, "Ações": 0.05},
+    "Balanceado":  {"CDI": 0.05, "Renda Fixa": 0.55, "Multimercados": 0.30, "Ações": 0.10},
+    "Crescimento": {"CDI": 0.00, "Renda Fixa": 0.50, "Multimercados": 0.35, "Ações": 0.15},
+    "Sofisticado": {"CDI": 0.00, "Renda Fixa": 0.35, "Multimercados": 0.40, "Ações": 0.25},
 }
 
-# ─── BANDAS min / max por perfil ─────────────────────────────────────────────
-# NOTA: Balanceado / Renda Fixa tem min=65% enquanto a tática é 55%.
-# Provável inconsistência na planilha — confirmar com o time Mercury.
 PERFIS_BANDAS = {
-    "Conservador": {
-        "CDI":          {"min": 0.00, "max": 0.50},
-        "Renda Fixa":   {"min": 0.45, "max": 0.65},
-        "Multimercados":{"min": 0.10, "max": 0.40},
-        "Ações":        {"min": 0.00, "max": 0.02},
-    },
-    "Moderado": {
-        "CDI":          {"min": 0.00, "max": 0.30},
-        "Renda Fixa":   {"min": 0.45, "max": 0.65},
-        "Multimercados":{"min": 0.10, "max": 0.40},
-        "Ações":        {"min": 0.03, "max": 0.07},
-    },
-    "Balanceado": {
-        "CDI":          {"min": 0.00, "max": 0.30},
-        "Renda Fixa":   {"min": 0.65, "max": 0.70},  # ← ATENÇÃO: min > tática (55%)
-        "Multimercados":{"min": 0.05, "max": 0.55},
-        "Ações":        {"min": 0.05, "max": 0.15},
-    },
-    "Crescimento": {
-        "CDI":          {"min": 0.00, "max": 0.25},
-        "Renda Fixa":   {"min": 0.35, "max": 0.65},
-        "Multimercados":{"min": 0.15, "max": 0.55},
-        "Ações":        {"min": 0.10, "max": 0.20},
-    },
-    "Sofisticado": {
-        "CDI":          {"min": 0.00, "max": 0.15},
-        "Renda Fixa":   {"min": 0.25, "max": 0.45},
-        "Multimercados":{"min": 0.30, "max": 0.50},
-        "Ações":        {"min": 0.20, "max": 0.30},
-    },
+    "Conservador": {"CDI": (0.00, 0.50), "Renda Fixa": (0.45, 0.65), "Multimercados": (0.10, 0.40), "Ações": (0.00, 0.02)},
+    "Moderado":    {"CDI": (0.00, 0.30), "Renda Fixa": (0.45, 0.65), "Multimercados": (0.10, 0.40), "Ações": (0.03, 0.07)},
+    "Balanceado":  {"CDI": (0.00, 0.30), "Renda Fixa": (0.65, 0.70), "Multimercados": (0.05, 0.55), "Ações": (0.05, 0.15)},
+    "Crescimento": {"CDI": (0.00, 0.25), "Renda Fixa": (0.35, 0.65), "Multimercados": (0.15, 0.55), "Ações": (0.10, 0.20)},
+    "Sofisticado": {"CDI": (0.00, 0.15), "Renda Fixa": (0.25, 0.45), "Multimercados": (0.30, 0.50), "Ações": (0.20, 0.30)},
 }
 
-# ─── METAS DE DESEMPENHO (seção "Estatísticas" da matriz) ────────────────────
 PERFIS_METAS = {
-    "Conservador": {"retorno_pct_cdi": 1.07, "vol":  0.020, "p90": 1.30, "p10": 0.85},
-    "Moderado":    {"retorno_pct_cdi": 1.10, "vol":  0.025, "p90": 1.43, "p10": 0.76},
-    "Balanceado":  {"retorno_pct_cdi": 1.12, "vol":  0.035, "p90": 1.56, "p10": 0.65},
-    "Crescimento": {"retorno_pct_cdi": 1.14, "vol":  0.050, "p90": 1.60, "p10": 0.59},
-    "Sofisticado": {"retorno_pct_cdi": 1.16, "vol":  0.070, "p90": 1.80, "p10": 0.41},
-}
-
-CLASSES_ORDEM = ["CDI", "Renda Fixa", "Multimercados", "Ações"]
-PERFIS_LISTA  = ["Conservador", "Moderado", "Balanceado", "Crescimento", "Sofisticado"]
-
-# ─── FUNDOS POR CLASSE ────────────────────────────────────────────────────────
-# PENDENTE: lista oficial de fundos da Mercury por classe.
-# Os fundos abaixo são referência da carteira Lauro Eduardo — substituir.
-FUNDOS_POR_CLASSE = {
-    "CDI": [
-        {"cnpj": "30.509.221/0001-50", "nome": "V8 Cash FIC FIRF",          "tipo": "fundo_cvm"},
-        {"cnpj": "46.098.897/0001-39", "nome": "Occam Liquidez FIC FIF RF", "tipo": "fundo_cvm"},
-    ],
-    "Renda Fixa": [
-        {"cnpj": "53.095.152/0001-81", "nome": "XP Juros Ativos CDI Deb. Incentivadas FI Infra RF", "tipo": "fundo_cvm"},
-        {"cnpj": "19.418.031/0001-95", "nome": "Icatu Vanguarda Pré-Fixado FIF CI RF",              "tipo": "fundo_cvm"},
-        {"cnpj": "22.003.930/0001-31", "nome": "XP Crédito Estruturado 120 FIC FIM CP",             "tipo": "fundo_cvm"},
-        {"cnpj": "50.716.952/0001-84", "nome": "M8 Credit Advanced FIC FIDC",
-         "tipo": "fidc", "benchmark_ref": "CDI", "benchmark_pct": 1.14},
-    ],
-    "Multimercados": [
-        {"cnpj": "48.997.077/0001-04", "nome": "Genoa Capital Sagres I FIF CIC Multimercado", "tipo": "fundo_cvm"},
-        {"cnpj": "32.240.069/0001-89", "nome": "AZ Quest Advisory Total Return FIC FIF MM",   "tipo": "fundo_cvm"},
-    ],
-    "Ações": [
-        # PENDENTE: fundos de ações Mercury
-    ],
+    "Conservador": {"retorno_pct_cdi": 1.07, "vol": 0.020, "p90": 1.30, "p10": 0.85},
+    "Moderado":    {"retorno_pct_cdi": 1.10, "vol": 0.025, "p90": 1.43, "p10": 0.76},
+    "Balanceado":  {"retorno_pct_cdi": 1.12, "vol": 0.035, "p90": 1.56, "p10": 0.65},
+    "Crescimento": {"retorno_pct_cdi": 1.14, "vol": 0.050, "p90": 1.60, "p10": 0.59},
+    "Sofisticado": {"retorno_pct_cdi": 1.16, "vol": 0.070, "p90": 1.80, "p10": 0.41},
 }
